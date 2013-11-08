@@ -8,9 +8,9 @@
 
 def complement(nuc):
     return {
-		'A': 'T',
+	'A': 'T',
         'T': 'A',
-		'G': 'C',
+	'G': 'C',
         'C': 'G',
     }.get(nuc, "")
 
