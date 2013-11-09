@@ -47,7 +47,7 @@ def solve(dna):
 
 def main():
     f = open('input.txt', 'r')
-    dna = f.readline()
+    dna = f.readline().rstrip('\n')
     f.close()
 
     solve(dna)
