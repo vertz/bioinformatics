@@ -20,9 +20,7 @@ def value(nuc):
     }.get(nuc, 0)
 
 def solve(dna):
-
     pos = []
-    
     skew = 0
     min_skew = skew
 
