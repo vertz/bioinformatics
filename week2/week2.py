@@ -1,4 +1,3 @@
-
 # complement of nucleotide 
 def complement(nuc):
     return {
@@ -59,7 +58,7 @@ def rna_to_amino_conversion_rate():
 # Translate an RNA string into an amino acid string.    
 def translate_rna_to_amino_acid(rna, frame = 0, br_delimiter = ""):
     rate = rna_to_amino_conversion_rate()
-    if frame < 0 or frame > 2:
+    if frame < 0 or frame >= rate:
         raise Exception("frame out of bound (translate_rna_to_amino_acid)")
 
     ret = ""
