@@ -35,7 +35,7 @@ def bf_pattern_matching(string, pat):
 
     return pos
 
-def loadRNA_codon_table(br_delimiter = ""):
+def load_rna_codon_table(br_delimiter = ""):
     table = {}
     
     f = open('RNA_codon_table.txt', 'r')
@@ -51,6 +51,23 @@ def loadRNA_codon_table(br_delimiter = ""):
             
     f.close()
     return table
+    
+def load_integer_mass_table():
+    table = {}
+    
+    f = open('integer_mass_table.txt', 'r')
+    while True:
+        line = f.readline().rstrip()
+        if not line: break
+        
+        data = line.split()
+        if len(data) == 2:
+            table[data[0]] = int(data[1])
+        else:
+            raise Exception("bad data format")
+            
+    f.close()
+    return table    
 
 def rna_to_amino_conversion_rate():
     return 3
@@ -59,10 +76,10 @@ def rna_to_amino_conversion_rate():
 def translate_rna_to_amino_acid(rna, frame = 0, br_delimiter = ""):
     rate = rna_to_amino_conversion_rate()
     if frame < 0 or frame >= rate:
-        raise Exception("frame out of bound (translate_rna_to_amino_acid)")
+        raise Exception("frame out of bound")
 
     ret = ""
-    translation_table = loadRNA_codon_table(br_delimiter)
+    translation_table = load_rna_codon_table(br_delimiter)
     
     sz = len(rna) - frame
     sz = sz - sz%rate
@@ -122,6 +139,37 @@ def peptide_encoding(dna, pep):
     
     return strings
 
+def generate_subpeptides(pep):
+    subpeptides = ['']
+    sz = len(pep)
+    
+    loop_pep = pep + pep
+    loop_range = range(0,sz)
+    
+    for length in range(1,sz):
+        subpeptides += [loop_pep[idx:idx+length] for idx in loop_range]
+        
+    subpeptides.append(pep)
+    return subpeptides     
 
+def integer_mass(pep, integer_mass_table = None):
+    if not integer_mass_table:
+        integer_mass_table = load_integer_mass_table()
+        
+    mass = 0
+    for atom in pep:
+        mass += integer_mass_table[atom]
+        
+    return mass    
+
+def cyclospectrum(pep):
+    integer_mass_table = load_integer_mass_table()
+    subpeptides = generate_subpeptides(pep)
+    
+    ret = []
+    for sub in subpeptides:
+        ret.append(integer_mass(sub, integer_mass_table))
+    
+    return ret
     
         
