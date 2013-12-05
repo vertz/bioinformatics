@@ -112,7 +112,27 @@ def de_bruijn_from_string(text, k):
             graph[prefix_1] = edges                  
                
     return graph             
-                
-                
+
+# Construct the de Bruijn graph from a set of k-mers
+#   Input: A collection of k-mers Patterns.
+#   Output: the de Bruijn graph DeBruijn(Patterns).                
+def de_bruijn_from_k_mers(k_mers):                   
+    k_mers = list(k_mers)
+    
+    graph = {}
+    
+    for mer in k_mers:
+        suffix = string_suffix(mer)
+        prefix = string_prefix(mer)        
+
+        if prefix in graph.keys():
+            graph[prefix].append(suffix)
+        else:
+            graph[prefix] = [suffix]
+            
+    return graph        
+            
+
+
                 
                 
