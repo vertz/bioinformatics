@@ -248,6 +248,14 @@ def find_unbalanced_nodes(graph):
             
         count += 1       
     
+    if len(unbalanced) == 1:
+        edges = set(edges)
+        
+        for u in _graph.keys():
+            if not u in edges:
+                unbalanced.append(u) 
+                break   
+    
     return unbalanced            
 
 # Solve the Eulerian Path Problem.
@@ -285,6 +293,20 @@ def eulerian_path(graph):
         eulerian_path = cycle    
     
     return eulerian_path
- 
+
+# Solve the String Reconstruction Problem.
+#    Input: directed graph that has an Eulerian path.
+#    Output: An Eulerian path in this graph.
+def string_reconstruction(graph):
+    path = eulerian_path(graph)
+    
+    if not path:
+        raise Exception("Empty path")    
+    
+    text = path[0]
+    for s in path[1:]:
+        text += s[-1]  
+        
+    return text     
  
                 
