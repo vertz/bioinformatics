@@ -40,7 +40,35 @@ def de_bruijn_graph_to_string(graph):
             
         ret += neighbors[sz] + "\n"    
             
-    return ret          
+    return ret  
+    
+def cycle_to_string(cycle):
+    cycle = list(cycle)
+    
+    ret = ""
+    sz = len(cycle) - 1
+    
+    for idx in range(sz):
+        ret += cycle[idx] + "->"  
+        
+    ret += cycle[sz] + "\n"  
+    return ret     
+    
+def adjacency_list_to_graph(adj):
+    adj = list(adj)
+    
+    graph = {}
+    
+    for elem in adj:
+        lst = elem.split(" -> ")
+        if len(lst) != 2:
+            raise Exception("bad data format => " + str(lst))
+            
+        u = lst[0]
+        neighbors = lst[1].split(",") 
+        graph[u] = neighbors    
+    
+    return graph           
 
 def string_suffix(s):
     return s[1:] 
@@ -130,9 +158,68 @@ def de_bruijn_from_k_mers(k_mers):
         else:
             graph[prefix] = [suffix]
             
-    return graph        
-            
+    return graph 
 
+# Solve the Eulerian Cycle Problem.
+#   Input: An Eulerian directed graph.
+#   Output: An Eulerian cycle in this graph.    
+def eulerian_cycle(graph):
+    _graph = dict(graph)
+    
+    euler_cycle = []
+    unused_edges = []
+    cycle = []
+    
+    vertices = _graph.keys()
+    if len(vertices) < 1:
+        raise Exception("empty graph")    
+        
+    u = vertices[0]
+    while True:
+        
+        if not _graph[u]:
+            
+            cycle.append(u)
+            
+            if u != cycle[0]:
+                raise Exception("not a cycle")   
+            
+            if not euler_cycle:
+                euler_cycle = cycle
+            else:
+                idx = euler_cycle.index(cycle[0])
+                
+                tmp  = euler_cycle[:idx]
+                tmp += cycle
+                tmp += euler_cycle[idx+1:]
+                
+                euler_cycle = tmp  
+            
+            if not unused_edges:
+                break
+            
+            v = unused_edges[0]
+            edges = _graph[v]
+            u = edges.pop()
+            
+            if not edges:
+                unused_edges.remove(v)  
+                
+            cycle = [v]     
+        
+        else:
+            cycle.append(u)
+            edges = _graph[u]
+            
+            _u = edges.pop()
+            if edges and not u in unused_edges:
+                unused_edges.append(u)
+            elif not edges and u in unused_edges:
+                unused_edges.remove(u)    
+                
+            u = _u
+                
+    return euler_cycle            
 
                 
                 
