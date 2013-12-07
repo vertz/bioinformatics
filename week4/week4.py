@@ -221,5 +221,70 @@ def eulerian_cycle(graph):
                 
     return euler_cycle            
 
-                
+#   Input: directed graph that has an Eulerian path.
+#   Output: list of unbalanced nodes in the graph
+def find_unbalanced_nodes(graph):
+    _graph = dict(graph)
+    
+    edges = []
+    for nodes in _graph.values():
+        edges += nodes         
+    
+    unbalanced = []
+    
+    v = None
+    count = 0
+    for u in sorted(edges):
+    
+        if v != u:
+            if count % 2 == 1:
+                unbalanced.append(v)                    
+            
+            v = u
+            if v in _graph.keys():
+                count = len(_graph[v])
+            else:
+                count = 0
+            
+        count += 1       
+    
+    return unbalanced            
+
+# Solve the Eulerian Path Problem.
+#    Input: directed graph that has an Eulerian path.
+#    Output: An Eulerian path in this graph. 
+def eulerian_path(graph):
+    _graph = dict(graph)
+    
+    unbalanced = find_unbalanced_nodes(graph)
+    sz = len(unbalanced)
+    w = None
+    if sz == 2:
+    
+        u = unbalanced[0]
+        v = unbalanced[1]
+        
+        if u in _graph.keys():
+            w = v
+            _graph[v] = [u]
+        else:
+            w = u
+            _graph[u] = [v]     
+         
+    elif sz != 0:
+        raise Exception("wrong number of unbalanced nodes ( " + str(sz) + " )")            
+    
+    cycle = eulerian_cycle(_graph)
+    cycle.pop() # remove cycle
+    
+    if w:
+        idx = cycle.index(w) + 1
+        eulerian_path  = cycle[idx:]
+        eulerian_path += cycle[:idx]
+    else:
+        eulerian_path = cycle    
+    
+    return eulerian_path
+ 
+ 
                 
