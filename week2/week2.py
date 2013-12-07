@@ -1,3 +1,4 @@
+
 # complement of nucleotide 
 def complement(nuc):
     return {
@@ -171,5 +172,112 @@ def cyclospectrum(pep):
         ret.append(integer_mass(sub, integer_mass_table))
     
     return ret
+
+def factorial(n):
+    num = 1
+    while n >= 1:
+        num *= n
+        n -= 1
+    return num  
+
+def count_permutation(pep, double = ['I','K']):
+    pep = sorted(pep)
+    
+    sol = factorial(len(pep))
+    d = 0
+    
+    curr  = pep[0]
+    count = 0
+    
+    for c in pep:
+        
+        if c != curr:
+        
+            if curr in double:
+                d += count
+        
+            sol /= factorial(count)
+            
+            curr = c
+            count = 0
+            
+        count += 1            
+    
+    if curr in double:
+        d += count
+    
+    sol /= factorial(count)
+    sol *= pow(2,d)
+    
+    return sol
+    
+def count_permutation_stepic(pep):
+    pep = sorted(pep)
+    
+    sol = factorial(len(pep))
+    
+    curr  = pep[0]
+    count = 0
+    
+    for c in pep:
+        
+        if c != curr:
+        
+            sol /= factorial(count)
+            
+            curr = c
+            count = 0
+            
+        count += 1  
+        
+    sol /= factorial(count)
+    return sol    
+    
+def count_peptides(mass, integer_mass_table = None):
+    if not integer_mass_table:
+        integer_mass_table = load_integer_mass_table()
+        
+    mass = int(mass)
+    sol = 0
+    
+    del integer_mass_table['Q']
+    del integer_mass_table['L']    
+    
+    keys = integer_mass_table.keys()
+    sz = len(keys)
+    
+    curr = []
+    for idx in range(sz):
+        x = keys[idx]
+        curr.append((idx ,x , integer_mass_table[x]))    
+    
+    next = []
+    
+    while curr:
+        for tup in curr:
+    
+            t_idx  = tup[0]
+            t_pep  = tup[1]
+            t_mass = tup[2]
+            
+            for idx in range(t_idx, sz):
+                x = keys[idx]
+                m = t_mass + integer_mass_table[x]
+                pep = t_pep + x
+                
+                if m > mass:
+                    continue
+                if m == mass:
+                    sol += count_permutation_stepic(pep)
+                    continue
+            
+                next.append((idx, pep, m))
+            
+        curr = next
+        next = []         
+    
+    print sol
+    return sol
+        
     
         
