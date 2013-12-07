@@ -307,6 +307,49 @@ def string_reconstruction(graph):
     for s in path[1:]:
         text += s[-1]  
         
-    return text     
+    return text   
+
+#    Input: An integer k.
+#    Output: list of all binary numbers in range [0,2^k)
+def binary_numbers_iter(k, numbers = ['0','1']):
+    k = int(k) - 1
+    
+    if k < 1:
+        return numbers
+        
+    lst = []
+    for num in numbers:
+        lst += [num + '0', num + '1']
+        
+    return binary_numbers_iter(k, lst)    
+
+# Solve the k-Universal Circular String Problem.
+#    Input: An integer k.
+#    Output: A k-universal circular string.    
+def universal_string(k):
+    k = int(k) - 1
+    graph = {}
+    
+    if k < 2:
+        raise Exception("k(" + str(k + 1) + ") should be > 2 ") 
+    
+    nodes = binary_numbers_iter(k) 
+    for u in nodes:
+        suffix = string_suffix(u)
+        graph[u] = [suffix + '0', suffix + '1']    
  
+    cycle = eulerian_cycle(graph)   
+    
+    idx = cycle.index(nodes[0])
+    path  = cycle[idx:]
+    path += cycle[1:idx]
+    
+    u_string = path[0]
+    zero_idx = 1 - k
+    
+    for s in path[1:zero_idx]:
+        u_string += s[-1]  
+        
+    return u_string
+    
                 
