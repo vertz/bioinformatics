@@ -74,7 +74,13 @@ def string_suffix(s):
     return s[1:] 
                    
 def string_prefix(s):
-    return s[:-1]  
+    return s[:-1]      
+
+def read_pair_suffix(pair):
+    return (pair[0][1:],pair[1][1:]) 
+                   
+def read_pair_prefix(pair):
+    return (pair[0][:-1],pair[1][:-1]) 
 
 # Solve the Overlap Graph Problem 
 #   Input: A collection Patterns of k-mers.
@@ -159,6 +165,27 @@ def de_bruijn_from_k_mers(k_mers):
             graph[prefix] = [suffix]
             
     return graph 
+    
+# Construct the de Bruijn graph from a set of read_pairs
+#   Input: A collection of read_pairs
+#   Output: the de Bruijn graph DeBruijn(read_pairs).                
+def de_bruijn_from_read_pairs(read_pairs):                   
+    read_pairs = list(read_pairs)
+    
+    graph = {}
+    
+    for pair in read_pairs:
+        pair = pair.split('|')
+    
+        suffix = read_pair_suffix(pair)
+        prefix = read_pair_prefix(pair)        
+
+        if prefix in graph.keys():
+            graph[prefix].append(suffix)
+        else:
+            graph[prefix] = [suffix]
+            
+    return graph    
 
 # Solve the Eulerian Cycle Problem.
 #   Input: An Eulerian directed graph.
@@ -351,5 +378,53 @@ def universal_string(k):
         u_string += s[-1]  
         
     return u_string
+
+def read_pairs_to_string(read_pairs):
+    read_pairs = list(read_pairs)
     
-                
+    ret = ""
+    for pair in read_pairs[:-1]:
+        ret += "(" + pair[0] + "|" + pair[1] + "),"  
+        
+    pair = read_pairs[-1]    
+    ret += "(" + pair[0] + "|" + pair[1] + ") \n" 
+    
+    return ret    
+
+# Give the (k,d)-mer composition of text in lexicographic order    
+def paired_composition(text, k, d):
+    k = int(k)
+    d = int(d)
+    
+    read_pairs = []
+    
+    sz  = len(text) - 2*k - d + 1
+    for idx in range(sz):
+        idy = idx + k + d
+        read1 = text[idx : idx + k]
+        read2 = text[idy : idy + k]
+        
+        read_pairs.append([read1,read2])
+    
+    return sorted(read_pairs)    
+
+# Solve the String Reconstruction from Read-Pairs Problem.
+#    Input: paired (k-1)-mers PairedReads graph and integer d.
+#    Output: A string Text with (k, d)-mer composition equal to PairedReads.
+def string_reconstruction_from_read_pairs(graph, d):
+    path = eulerian_path(graph)
+    d = int(d)
+    
+    if not path:
+        raise Exception("Empty path")    
+    
+    text = path[0][0]
+    for pair in path[1 : d + 2]:
+        # [0,d+1) because |pair| = k-1
+        text += pair[0][-1]
+    
+    text += path[0][1]
+    for pair in path[1:]:
+        text += pair[1][-1]  
+        
+    return text                   
