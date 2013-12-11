@@ -427,4 +427,62 @@ def string_reconstruction_from_read_pairs(graph, d):
     for pair in path[1:]:
         text += pair[1][-1]  
         
-    return text                   
+    return text 
+
+def graph_degrees(graph):
+    if not graph:
+        raise Exception("Empty graph")
+    
+    # degrees[u] = [in(u),out(u)]    
+    degrees = {}     
+    
+    for v in graph.keys():
+        neighbors = graph[v]
+        out_degree = len(neighbors)
+        
+        if v in degrees:
+            degrees[v][1] = out_degree
+        else:
+            degrees[v] = [0, out_degree]        
+        
+        for u in neighbors:
+            if u in degrees:
+                degrees[u][0] += 1
+            else:
+                degrees[u] = [1,0]
+     
+    return degrees                 
+
+# Generate the contigs from a collection of reads (with imperfect coverage).
+#    Input: A collection of k-mers Patterns.
+#    Output: All contigs in DeBruijn(Patterns).    
+def generate_contigs_from_reads(k_mers):
+    graph = de_bruijn_from_k_mers(k_mers)
+    if not graph:
+        raise Exception("Empty graph")         
+    
+    degrees = graph_degrees(graph)
+    contigs = []
+    
+    for v in graph.keys():
+    
+        # we want maximal non-branching path 
+        if degrees[v] == [1,1]:
+            continue
+    
+        for u in graph[v]: 
+            contig = v
+            w = u
+            
+            while True:
+                contig += w[-1]
+                w_degree = degrees[w] 
+                
+                if w_degree == [1,1]:
+                    w = graph[w][0]
+                else:
+                    break
+                   
+            contigs.append(contig)                                      
+         
+    return sorted(contigs)                           
