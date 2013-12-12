@@ -36,4 +36,35 @@ def change_mem(money, coins):
                 if n_coins < mem_min_coins[m]:
                     mem_min_coins[m] = n_coins     
                 
-    return mem_min_coins[money]   
+    return mem_min_coins[money] 
+
+# Find the length of a longest path in the Manhattan Tourist Problem.
+#    Input: Integers n and m, followed by an n * (m + 1) matrix down and an (n + 1) * m matrix right.
+#           The two matrices are separated by the - symbol.
+#    Output: The length of a longest path from source (0, 0) to sink (n, m) in the n * m rectangular grid whose
+#           edges are defined by the matrices down and right.
+def manhattan_tourist(row, col, down, right):
+    _row = int(row) + 1
+    _col = int(col) + 1
+    
+    mem = [[0]*_col for x in xrange(_row)]
+    
+    for i in range(1, _col):
+        mem[0][i] = mem[0][i - 1] + right[0][i - 1]
+    
+    for j in range(1, _row):
+        mem[j][0] = mem[j - 1][0] + down[j - 1][0]
+
+    for i in range(1, _row):
+        for j in range(1, _col):
+            
+            ij_down  = mem[i-1][j] + down[i-1][j]   
+            ij_right = mem[i][j-1] + right[i][j-1]
+                
+            mem[i][j] = max(ij_down , ij_right)   
+
+    return mem[row][col]      
+    
+    
+    
+       
