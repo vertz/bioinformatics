@@ -1,3 +1,4 @@
+
 # Solve the Change Problem.
 #    Input: An integer money and an array coins = (coin1, ..., coind).
 #    Output: The minimum number of coins with denominations coins that changes money.        
@@ -64,7 +65,65 @@ def manhattan_tourist(row, col, down, right):
             mem[i][j] = max(ij_down , ij_right)   
 
     return mem[row][col]      
+
+# Longest Common Subsequence (enum)
+class LCS:
+    deletion  = 1
+    insertion = 2
+    matches   = 3
+
+def reverseString(s):
+    return s[::-1]
+
+# outputs an LCS 
+# between the i-prefix of s1 and the j-prefix of s2
+# from longest_common_subsequence(s1, s2)
+def output_lcs(backtrack, s, i, j):
+
+    ret = ""
+    while i > 0 and j > 0:
+        
+        if backtrack[i][j] == LCS.deletion:
+            i -= 1
+        elif backtrack[i][j] == LCS.insertion: 
+            j -= 1
+        else:
+            i -= 1
+            j -= 1
+            ret += s[i]
+            
+    return reverseString(ret)  
+             
+# solve the Longest Common Subsequence Problem.
+#    Input: Two strings s and t.
+#    Output: A longest common subsequence of s and t.
+#
+# Note: If more than one LCS exists, you may return any one.    
+def longest_common_subsequence(s1, s2):
     
+    sz_1 = len(s1) + 1
+    sz_2 = len(s2) + 1
     
-    
-       
+    backtrack = [[0]*sz_2 for x in xrange(sz_1)] 
+    mem = [[0]*sz_2 for x in xrange(sz_1)]
+
+    for i in range(1, sz_1):
+        for j in range(1, sz_2):
+        
+            mem[i][j] = max(mem[i-1][j] , mem[i][j-1])
+            if s1[i-1] == s2[j-1]:
+                mem[i][j] = max(mem[i][j] , mem[i-1][j-1] + 1)     
+      
+            if mem[i][j] == mem[i-1][j]:
+                backtrack[i][j] = LCS.deletion
+            elif mem[i][j] == mem[i][j-1]:
+                backtrack[i][j] = LCS.insertion
+            else:
+                backtrack[i][j] = LCS.matches 
+            
+    #return mem[sz_1 - 1][sz_2 - 1]
+    return output_lcs(backtrack, s1, sz_1 - 1, sz_2 - 1)
+  
+
+
+          
