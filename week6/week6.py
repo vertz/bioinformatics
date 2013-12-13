@@ -124,31 +124,35 @@ def longest_common_subsequence(s1, s2):
             
     #return mem[sz_1 - 1][sz_2 - 1]
     return output_lcs(backtrack, s1, sz_1 - 1, sz_2 - 1)
-
+    
 # Output topological ordering 
 def topological_sort(graph, src, weight = True):
     if weight:
         graph = graph['edges']
     
+    edges = []
+    for lst in graph.values():
+        edges += lst     
+    
     top_sort = []
-    stack = []
-           
-    t = src        
-    while True:
+    stack = [src]
+                  
+    while stack:
         
-        if not t in top_sort:
-            top_sort.append(t)
+        t = stack.pop()
+        top_sort.append(t)
+        
+        if t in graph.keys(): 
+            for v in graph[t]:
             
-            if t in graph.keys(): 
-                stack += graph[t]
+                edges.remove(v)
+                if not v in edges:
+                    stack.append(v) 
+    
+    if edges:
+        raise Exception("graph has at least one cycle") 
         
-        if stack:
-            t = stack.pop()
-            
-        else:
-            break       
-        
-    return top_sort     
+    return top_sort        
 
 # Input a list of edges in the graph. 
 # The edge notation 0->1:7 indicates that an edge connects node 0 to node 1 with weight 7
@@ -323,11 +327,108 @@ def global_alignment(s1, s2, indel_penalty = 5, score = None):
     ret += output_global_alignment(backtrack, s1, s2, sz_1 - 1, sz_2 - 1)
     return ret
 
+def backtrack_alignment_graph(path, s1, s2):
+    
+    ret1 = ""
+    ret2 = ""
+    
+    curr = path.pop()
+    i = curr[0]
+    j = curr[1]
+    
+    zero = (0,0)
+    while curr > zero and path:
+    
+        curr = path.pop()  
+        if curr == (i-1,j):
+            i -= 1
+            ret1 += s1[i]
+            ret2 += "-"
+            
+        elif curr == (i,j-1):
+            j -= 1
+            ret1 += "-"
+            ret2 += s2[j]
+            
+        else:
+            i -= 1
+            j -= 1
+            ret1 += s1[i]
+            ret2 += s2[j]
+    
+    ret  = reverse(ret1) + '\n'
+    ret += reverse(ret2) + '\n' 
+    return ret
 
 
+def alignment_graph(s1, s2, indel_penalty = 5, score = None):
+    if not score:
+        score = load_scoring_matrix() 
+    
+    sz_1 = len(s1) + 1
+    sz_2 = len(s2) + 1
+    
+    edges = {}
+    weights = {}
 
+    for i in xrange(1, sz_1):
+        v = (i-1,0)
+        u = (i,0)
+        
+        edges[v] = [u]
+        weights[(v,u)] = -indel_penalty
 
+    for j in xrange(1, sz_2):
+        v = (0,j-1)
+        u = (0,j)
+        
+        if v in edges.keys():
+            edges[v].append(u)
+        else:
+            edges[v] = [u]
+        weights[(v,u)] = -indel_penalty
 
+    w = [-indel_penalty, -indel_penalty, 0]
 
+    for i in range(1, sz_1):
+        for j in range(1, sz_2):
+        
+            u    = (i,j)
+            in_u = [(i-1,j), (i,j-1), (i-1,j-1)]
+        
+            idx = score['index'][s1[i-1]]
+            idy = score['index'][s2[j-1]]
+            w[2] = score['matrix'][idx][idy] 
+            
+            for k in xrange(3):
+                v = in_u[k]
+            
+                if v in edges.keys():
+                    edges[v].append(u)
+                else:
+                    edges[v] = [u]
+                weights[(v,u)] = w[k]  
+                
+    return {'weights':weights, 'edges':edges}                       
+
+# Solve the Global Alignment Problem.
+#    Input: Two protein strings written in the single-letter amino acid alphabet.
+#    Output: The maximum alignment score of these strings followed by an alignment achieving this
+#    maximum score. Use the BLOSUM62 scoring matrix and indel penalty = 5
+def global_alignment_with_dag(s1, s2, indel_penalty = 5, score = None):
+    if not score:
+        score = load_scoring_matrix()
+        
+    graph   = alignment_graph(s1,s2)
+    dag_ret = dag_longest_path(graph, (0,0), (len(s1),len(s2)))
+    
+    ret  = str(dag_ret['length']) + '\n'
+    ret += backtrack_alignment_graph(dag_ret['path'], s1, s2)
+    return ret    
+
+#graph = alignment_graph('ATA','TA')
+#print dag_longest_path(graph, (0,0), (3,2))
+#print global_alignment('ATA','TA')
+print global_alignment_with_dag('ATA','TA')
 
            
