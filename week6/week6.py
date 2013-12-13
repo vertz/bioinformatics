@@ -228,12 +228,22 @@ def dag_longest_path(graph, src, sink):
 
     raise Exception("sink not in top_sort") 
 
+class Score:
+    BLOSUM62 = 1
+    PAM250   = 2
+
 # load the BLOSUM62 scoring matrix 
-def load_scoring_matrix():
+def load_scoring_matrix(t_score = Score.BLOSUM62):
     index = {}
     matrix = []
     
-    f = open('BLOSUM62.txt', 'r')
+    f = None
+    if t_score == Score.BLOSUM62:
+        f = open('BLOSUM62.txt', 'r')
+    elif t_score == Score.PAM250:
+        f = open('PAM250.txt', 'r')
+    else:
+        raise Exception("wrong score matrix")     
     
     keys = f.readline().strip().split()
     sz = len(keys)
@@ -327,20 +337,25 @@ def global_alignment(s1, s2, indel_penalty = 5, score = None):
     ret += output_global_alignment(backtrack, s1, s2, sz_1 - 1, sz_2 - 1)
     return ret
 
-def backtrack_alignment_graph(path, s1, s2):
+def backtrack_alignment_graph(path, s1, s2, local = False):
     
     ret1 = ""
     ret2 = ""
     
     curr = path.pop()
+    if local:
+        curr = path.pop()
+    
     i = curr[0]
     j = curr[1]
     
     zero = (0,0)
-    while curr > zero and path:
+    while path:
     
-        curr = path.pop()  
-        if curr == (i-1,j):
+        curr = path.pop() 
+        if curr <= zero:
+            break 
+        elif curr == (i-1,j):
             i -= 1
             ret1 += s1[i]
             ret2 += "-"
@@ -361,9 +376,7 @@ def backtrack_alignment_graph(path, s1, s2):
     return ret
 
 
-def alignment_graph(s1, s2, indel_penalty = 5, score = None):
-    if not score:
-        score = load_scoring_matrix() 
+def alignment_graph(s1, s2, indel_penalty, score):
     
     sz_1 = len(s1) + 1
     sz_2 = len(s2) + 1
@@ -419,16 +432,49 @@ def global_alignment_with_dag(s1, s2, indel_penalty = 5, score = None):
     if not score:
         score = load_scoring_matrix()
         
-    graph   = alignment_graph(s1,s2)
+    graph   = alignment_graph(s1,s2,indel_penalty,score)
     dag_ret = dag_longest_path(graph, (0,0), (len(s1),len(s2)))
     
     ret  = str(dag_ret['length']) + '\n'
     ret += backtrack_alignment_graph(dag_ret['path'], s1, s2)
     return ret    
 
-#graph = alignment_graph('ATA','TA')
-#print dag_longest_path(graph, (0,0), (3,2))
-#print global_alignment('ATA','TA')
-print global_alignment_with_dag('ATA','TA')
+# Solve the Local Alignment Problem.
+#    Input: Two protein strings written in the single-letter amino acid alphabet.
+#    Output: The maximum score of a local alignment of the strings, followed by a local alignment of these
+#    strings achieving the maximum score. Use the PAM250 scoring matrix and indel penalty = 5
+def local_alignment(s1, s2, indel_penalty = 5, score = None):
+    if not score:
+        score = load_scoring_matrix(Score.PAM250)
+        
+    graph = alignment_graph(s1,s2,indel_penalty,score)
+    
+    weights = graph['weights']
+    edges = graph['edges']
+    
+    sz_1 = len(s1) + 1
+    sz_2 = len(s2) + 1
+    
+    src  = (-1,-1)
+    sink = (sz_1,sz_2)
+    
+    edges[src] = []
+    edges[(sz_1-1,sz_2-1)] = []
+    
+    for i in range(0, sz_1):
+        for j in range(0, sz_2):
+            v = (i,j)   
+                             
+            edges[src].append(v)
+            edges[v].append(sink) 
+            
+            weights[(src,v)] = 0
+            weights[(v,sink)] = 0   
+    
+    dag_ret = dag_longest_path(graph, src, sink)
+    
+    ret  = str(dag_ret['length']) + '\n'
+    ret += backtrack_alignment_graph(dag_ret['path'], s1, s2, True)
+    return ret  
 
            
