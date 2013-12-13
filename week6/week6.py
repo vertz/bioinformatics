@@ -70,7 +70,8 @@ def manhattan_tourist(row, col, down, right):
 class LCS:
     deletion  = 1
     insertion = 2
-    matches   = 3
+    matche    = 3
+    mismatch  = 4
 
 def reverse(s):
     return s[::-1]
@@ -119,7 +120,7 @@ def longest_common_subsequence(s1, s2):
             elif mem[i][j] == mem[i][j-1]:
                 backtrack[i][j] = LCS.insertion
             else:
-                backtrack[i][j] = LCS.matches 
+                backtrack[i][j] = LCS.matche 
             
     #return mem[sz_1 - 1][sz_2 - 1]
     return output_lcs(backtrack, s1, sz_1 - 1, sz_2 - 1)
@@ -221,4 +222,112 @@ def dag_longest_path(graph, src, sink):
             path = output_dag_longest_path(backtrack, top_sort, idx)
             return {'length':mem[idx], 'path':path}
 
-    raise Exception("sink not in top_sort")        
+    raise Exception("sink not in top_sort") 
+
+# load the BLOSUM62 scoring matrix 
+def load_scoring_matrix():
+    index = {}
+    matrix = []
+    
+    f = open('BLOSUM62.txt', 'r')
+    
+    keys = f.readline().strip().split()
+    sz = len(keys)
+    for idx in xrange(sz):
+        index[keys[idx]] = idx    
+    
+    while True:
+        line = f.readline().strip()
+        if not line: break
+        
+        data = line.split()
+        if len(data) == sz + 1:
+            matrix.append(map(int, data[1:]))
+        else:
+            Exception("bad data format") 
+       
+    f.close()
+    
+    return {'index':index, 'matrix':matrix}
+
+def output_global_alignment(backtrack, s1, s2, i, j):
+
+    ret1 = ""
+    ret2 = ""
+    while i > 0 or j > 0:
+    
+        if backtrack[i][j] == LCS.deletion:
+            i -= 1
+            ret1 += s1[i]
+            ret2 += "-"
+            
+        elif backtrack[i][j] == LCS.insertion:
+            j -= 1
+            ret1 += "-"
+            ret2 += s2[j]
+            
+        else:
+            i -= 1
+            j -= 1
+            ret1 += s1[i]
+            ret2 += s2[j]
+    
+    ret  = reverse(ret1) + '\n'
+    ret += reverse(ret2) + '\n' 
+    return ret 
+
+# Solve the Global Alignment Problem.
+#    Input: Two protein strings written in the single-letter amino acid alphabet.
+#    Output: The maximum alignment score of these strings followed by an alignment achieving this
+#    maximum score. Use the BLOSUM62 scoring matrix and indel penalty = 5
+def global_alignment(s1, s2, indel_penalty = 5, score = None):
+    if not score:
+        score = load_scoring_matrix() 
+    
+    sz_1 = len(s1) + 1
+    sz_2 = len(s2) + 1
+    
+    backtrack = [[0]*sz_2 for x in xrange(sz_1)] 
+    mem = [[0]*sz_2 for x in xrange(sz_1)]
+
+    for i in xrange(1, sz_1):
+        backtrack[i][0] = LCS.deletion
+        mem[i][0] = mem[i-1][0] - indel_penalty
+
+    for j in xrange(1, sz_2):
+        backtrack[0][j] = LCS.insertion
+        mem[0][j] = mem[0][j-1] - indel_penalty
+
+    for i in range(1, sz_1):
+        for j in range(1, sz_2):
+        
+            idx = score['index'][s1[i-1]]
+            idy = score['index'][s2[j-1]]
+            matche = mem[i-1][j-1] + score['matrix'][idx][idy] 
+            deletion  = mem[i-1][j] - indel_penalty
+            insertion = mem[i][j-1] - indel_penalty  
+            
+            mem[i][j] = max(matche, deletion, insertion)
+            
+            if mem[i][j] == matche:
+                if s1[i-1] == s2[j-1]:
+                    backtrack[i][j] = LCS.matche
+                else:
+                    backtrack[i][j] = LCS.mismatch
+            elif mem[i][j] == insertion:
+                backtrack[i][j] = LCS.insertion
+            else:
+                backtrack[i][j] = LCS.deletion    
+      
+    ret  = str(mem[sz_1 - 1][sz_2 - 1]) + '\n'
+    ret += output_global_alignment(backtrack, s1, s2, sz_1 - 1, sz_2 - 1)
+    return ret
+
+
+
+
+
+
+
+
+           
