@@ -24,7 +24,7 @@ def main():
     s2 = f.readline().strip()
     f.close()
     
-    sol = week6.local_alignment(s1,s2)
+    sol = week6.local_alignment_1(s1,s2)
     
     g = open('output.txt', 'w')
     g.write(sol)

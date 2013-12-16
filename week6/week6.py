@@ -198,19 +198,47 @@ def output_dag_longest_path(backtrack, top_sort, i):
 #    node of the graph, followed by a list of edges in the graph. The edge notation 0->1:7 indicates that
 #    an edge connects node 0 to node 1 with weight 7.
 #    Output: The length of a longest path in the graph and the path.
-def dag_longest_path(graph, src, sink):
-    
-    top_sort = topological_sort(graph, src)
+def dag_longest_path(graph, src, sink, top_sort = None, local = False):
+    if not top_sort:
+        top_sort = topological_sort(graph, src)
+        
     sz = len(top_sort)
+    sink_idx = top_sort.index(sink)
     
     backtrack = [0 for x in xrange(sz)] 
     mem = [float("-infinity") for x in xrange(sz)]
     mem[0] = 0
     
-    for idx in xrange(sz):
+    for idx in xrange(sink_idx + 1):
         v = top_sort[idx]
         
+        if local and idx == sink_idx:
+            for idy in xrange(idx):
+            
+                # every node have edge from src
+                if local and idy == 0:
+                    if mem[idx] < 0:
+                        backtrack[idx] = idy
+                        mem[idx] = 0
+                        
+                    continue        
+            
+                w = mem[idy]
+                if mem[idx] < w:
+                    backtrack[idx] = idy
+                    mem[idx] = w
+            break            
+                  
         for idy in xrange(idx):
+        
+            # every node have edge from src
+            if local and idy == 0:
+                if mem[idx] < 0:
+                    backtrack[idx] = idy
+                    mem[idx] = 0
+                    
+                continue        
+        
             u = top_sort[idy]
             if not u in graph['edges'].keys():
                 continue
@@ -222,11 +250,8 @@ def dag_longest_path(graph, src, sink):
                     backtrack[idx] = idy
                     mem[idx] = w             
 
-        if v == sink:
-            path = output_dag_longest_path(backtrack, top_sort, idx)
-            return {'length':mem[idx], 'path':path}
-
-    raise Exception("sink not in top_sort") 
+    path = output_dag_longest_path(backtrack, top_sort, sink_idx)
+    return {'length':mem[idx], 'path':path}
 
 class Score:
     BLOSUM62 = 1
@@ -448,33 +473,141 @@ def local_alignment(s1, s2, indel_penalty = 5, score = None):
         score = load_scoring_matrix(Score.PAM250)
         
     graph = alignment_graph(s1,s2,indel_penalty,score)
-    
-    weights = graph['weights']
-    edges = graph['edges']
-    
-    sz_1 = len(s1) + 1
-    sz_2 = len(s2) + 1
+    top_sort = topological_sort(graph, (0,0))
     
     src  = (-1,-1)
-    sink = (sz_1,sz_2)
+    sink = (len(s1) + 1, len(s2) + 1)
     
-    edges[src] = []
-    edges[(sz_1-1,sz_2-1)] = []
+    top_sort.insert(0,src)
+    top_sort.append(sink)    
     
-    for i in range(0, sz_1):
-        for j in range(0, sz_2):
-            v = (i,j)   
-                             
-            edges[src].append(v)
-            edges[v].append(sink) 
-            
-            weights[(src,v)] = 0
-            weights[(v,sink)] = 0   
-    
-    dag_ret = dag_longest_path(graph, src, sink)
+    dag_ret = dag_longest_path(graph, src, sink, top_sort, True)
     
     ret  = str(dag_ret['length']) + '\n'
     ret += backtrack_alignment_graph(dag_ret['path'], s1, s2, True)
     return ret  
 
-           
+def local_alignment_graph(s1, s2, indel_penalty, score):
+    
+    sz_1 = len(s1) + 1
+    sz_2 = len(s2) + 1
+    
+    edges = {}
+    weights = {}
+    top_sort = [0]
+
+    u = 0
+    for i in xrange(1, sz_1):
+        v  = u
+        u += sz_2
+        
+        edges[v] = [u]
+        weights[(v,u)] = -indel_penalty
+        top_sort.append(u)
+        
+    u = 0  
+    for j in xrange(1, sz_2):
+        v  = u
+        u += 1
+        
+        if v in edges.keys():
+            edges[v].append(u)
+        else:
+            edges[v] = [u]
+        weights[(v,u)] = -indel_penalty
+        top_sort.append(u)
+        
+    w = [-indel_penalty, -indel_penalty, 0]
+
+    c_i_prev = 0
+    c_i_curr = sz_2
+    for i in xrange(1, sz_1):
+        for j in xrange(1, sz_2):
+        
+            u    = c_i_curr + j
+            top_sort.append(u)
+            
+            # i-1,j | i,j-1 | i-1,j-1
+            in_u = [c_i_prev + j, c_i_curr + j - 1, c_i_prev + j - 1]
+        
+            idx = score['index'][s1[i-1]]
+            idy = score['index'][s2[j-1]]
+            w[2] = score['matrix'][idx][idy] 
+            
+            for k in xrange(3):
+                v = in_u[k]
+            
+                if v in edges.keys():
+                    edges[v].append(u)
+                else:
+                    edges[v] = [u]
+                weights[(v,u)] = w[k]
+                
+        c_i_prev  = c_i_curr
+        c_i_curr += sz_2                
+                
+    return {'weights':weights, 'edges':edges, 'topological':top_sort}  
+
+def backtrack_local_alignment_graph(path, s1, s2, local = False):
+    
+    ret1 = ""
+    ret2 = ""
+    
+    curr = path.pop()
+    if local:
+        curr = path.pop()
+          
+    sz = len(s2) + 1
+    
+    j = curr % sz
+    i = (curr - j) / sz
+    
+    while path:
+    
+        prev = curr
+        curr = path.pop() 
+        if curr <= 0:
+            break 
+        elif curr == (prev - sz):
+            i -= 1
+            ret1 += s1[i]
+            ret2 += "-"
+            
+        elif curr == (prev - 1):
+            j -= 1
+            ret1 += "-"
+            ret2 += s2[j]
+            
+        else:
+            i -= 1
+            j -= 1
+            ret1 += s1[i]
+            ret2 += s2[j]
+    
+    ret  = reverse(ret1) + '\n'
+    ret += reverse(ret2) + '\n' 
+    return ret
+    
+# Solve the Local Alignment Problem.
+#    Input: Two protein strings written in the single-letter amino acid alphabet.
+#    Output: The maximum score of a local alignment of the strings, followed by a local alignment of these
+#    strings achieving the maximum score. Use the PAM250 scoring matrix and indel penalty = 5
+def local_alignment_1(s1, s2, indel_penalty = 5, score = None):
+    if not score:
+        score = load_scoring_matrix(Score.PAM250)
+        
+    graph = local_alignment_graph(s1,s2,indel_penalty,score)
+    top_sort = graph['topological']
+    
+    src  = -1
+    sink = top_sort[-1] + 1
+    
+    top_sort.insert(0,src)
+    top_sort.append(sink)    
+    
+    dag_ret = dag_longest_path(graph, src, sink, top_sort, True)
+    
+    ret  = str(dag_ret['length']) + '\n'
+    ret += backtrack_local_alignment_graph(dag_ret['path'], s1, s2, True)
+    return ret  
+            
