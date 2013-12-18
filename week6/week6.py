@@ -68,10 +68,11 @@ def manhattan_tourist(row, col, down, right):
 
 # Longest Common Subsequence (enum)
 class LCS:
-    deletion  = 1
-    insertion = 2
-    matche    = 3
-    mismatch  = 4
+    start     = -1
+    deletion  =  1
+    insertion =  2
+    matche    =  3
+    mismatch  =  4
 
 def reverse(s):
     return s[::-1]
@@ -295,7 +296,9 @@ def output_global_alignment(backtrack, s1, s2, i, j):
     ret2 = ""
     while i > 0 or j > 0:
     
-        if backtrack[i][j] == LCS.deletion:
+        if backtrack[i][j] == LCS.start:
+            break
+        elif backtrack[i][j] == LCS.deletion:
             i -= 1
             ret1 += s1[i]
             ret2 += "-"
@@ -610,4 +613,67 @@ def local_alignment_1(s1, s2, indel_penalty = 5, score = None):
     ret  = str(dag_ret['length']) + '\n'
     ret += backtrack_local_alignment_graph(dag_ret['path'], s1, s2, True)
     return ret  
+
+# Solve the Local Alignment Problem.
+#    Input: Two protein strings written in the single-letter amino acid alphabet.
+#    Output: The maximum score of a local alignment of the strings, followed by a local alignment of these
+#    strings achieving the maximum score. Use the PAM250 scoring matrix and indel penalty = 5
+def local_alignment_2(s1, s2, indel_penalty = 5, score = None):
+    if not score:
+        score = load_scoring_matrix(Score.PAM250) 
+    
+    sz_1 = len(s1) + 1
+    sz_2 = len(s2) + 1
+    
+    backtrack = [[0]*sz_2 for x in xrange(sz_1)] 
+    mem = [[0]*sz_2 for x in xrange(sz_1)]
+
+    for i in xrange(1, sz_1):
+        backtrack[i][0] = LCS.deletion
+        mem[i][0] = mem[i-1][0] - indel_penalty
+
+    for j in xrange(1, sz_2):
+        backtrack[0][j] = LCS.insertion
+        mem[0][j] = mem[0][j-1] - indel_penalty
+
+    for i in range(1, sz_1):
+        for j in range(1, sz_2):
+        
+            idx = score['index'][s1[i-1]]
+            idy = score['index'][s2[j-1]]
+            matche = mem[i-1][j-1] + score['matrix'][idx][idy] 
+            deletion  = mem[i-1][j] - indel_penalty
+            insertion = mem[i][j-1] - indel_penalty  
             
+            mem[i][j] = max(matche, deletion, insertion)
+            
+            if mem[i][j] == matche:
+                if s1[i-1] == s2[j-1]:
+                    backtrack[i][j] = LCS.matche
+                else:
+                    backtrack[i][j] = LCS.mismatch
+            elif mem[i][j] == insertion:
+                backtrack[i][j] = LCS.insertion
+            else:
+                backtrack[i][j] = LCS.deletion
+                
+            if mem[i][j] < 0:
+               mem[i][j] = 0
+               backtrack[i][j] = LCS.start         
+    
+    local_max = -1
+    i_max = 0
+    j_max = 0
+    
+    for i in range(1, sz_1):
+        for j in range(1, sz_2):
+        
+            if local_max < mem[i][j]:
+                local_max = mem[i][j]
+                i_max = i
+                j_max = j  
+      
+    ret  = str(local_max) + '\n'
+    ret += output_global_alignment(backtrack, s1, s2, i_max, j_max)
+    return ret 
+                   
