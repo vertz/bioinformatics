@@ -30,6 +30,10 @@ def perm_string(perm, isNeg):
     s += str(perm[sz]) + ')'
     return s    
 
+# Implement GREEDYSORTING.
+#    Input: A permutation P.
+#    Output: The sequence of permutations corresponding to applying GREEDYSORTING to P, ending with
+#    the identity permutation.
 def greedy_sorting(perm):
 
     ret = ""
@@ -56,6 +60,31 @@ def greedy_sorting(perm):
             ret += perm_string(p, isNeg) + "\n"
     
     return ret
+
+# Number of Breakpoints Problem: Find the number of breakpoints in a permutation.
+#    Input: A permutation P.
+#    Output: The number of breakpoints in P. 
+def count_breakpoints(perm):
+
+    n_breakpoints = 0 
+    p = [int(x) for x in perm.split()]
+
+    sz = len(p) - 1
+    i = 0
+
+    while i < sz:
+        
+        while i < sz and p[i]+1 == p[i+1]:
+            i += 1
+
+        n_breakpoints += 1
+        i += 1
     
+    if i == sz:
+        n_breakpoints += 1
+    elif p[sz] == sz + 1:
+        n_breakpoints -= 1
+
+    return n_breakpoints   
             
            
