@@ -65,7 +65,7 @@ def prefix_trie_matching(text, trie, sz = -1, root = 1):
     return False , ""
 
 # Implement TRIEMATCHING to solve the Multiple Pattern Matching Problem.
-#    Input: A string Text and a collection of strings Patterns.
+#    Input: A string Text and a Trie(Patterns).
 #    Output: All starting positions in Text where a string from Patterns appears as a substring.
 def trie_matching(text, trie):
 
@@ -89,6 +89,9 @@ def trie_matching(text, trie):
       
     return matching         
 
+# solve the Multiple Pattern Matching Problem.
+#    Input: A string Text and a collection of strings Patterns.
+#    Output: All starting positions in Text where a string from Patterns appears as a substring.
 def multiple_pattern_matching(text, patterns):
 
     trie, _  = trie_construction(patterns)
