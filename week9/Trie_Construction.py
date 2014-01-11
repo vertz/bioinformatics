@@ -35,7 +35,7 @@ def main():
         
     f.close()
 
-    sol = week9.trie_construction(patterns)
+    _ , sol = week9.trie_construction(patterns)
     
     g = open('output.txt', 'w')
     g.write(sol + '\n')

@@ -5,13 +5,11 @@
 #    any order you like. Each edge of the adjacency list of Trie(Patterns) will be encoded by a triple: the first
 #    two members of the triple must be the integers labeling the initial and terminal nodes of the edge,
 #    respectively; the third member of the triple must be the symbol labeling the edge.
-def trie_construction(patterns):
-    
-    ret = ""
-    
-    root  = 1
+def trie_construction(patterns, root_label = 1):
+    root = root_label
     next = root + 1
-
+    
+    adj_str = ""
     trie = {root:{}}
 
     for pat in patterns:
@@ -27,8 +25,7 @@ def trie_construction(patterns):
                 curr = node[c]
 
             if curr < 0 or not nodeExist:
-            
-                ret += str(curr) + " " + str(next) + " " + c + "\n"
+                adj_str += str(curr) + " " + str(next) + " " + c + "\n"
             
                 trie[next] = {} 
                 node[c] = next
@@ -38,9 +35,73 @@ def trie_construction(patterns):
         node = trie[curr]  
         c = pat[sz]
         if c not in node.keys():
-            ret += str(curr) + " " + str(next) + " " + c + "\n"
+            adj_str += str(curr) + " " + str(next) + " " + c + "\n"
             node[c] = next
             next += 1
 
+    return trie , adj_str
+    
+    
+def prefix_trie_matching(text, trie, sz = -1, root = 1):
+    if sz < 0:
+        sz = len(text)
 
+    node = root
+    idx = 0
+    
+    while idx < sz:
+        curr = trie[node]
+        c = text[idx]
+        
+        if c in curr.keys():
+            node = curr[c]
+            idx += 1
+        else:
+            break
+            
+        if node not in trie.keys():
+            return True , text[:idx]    
+
+    return False , ""
+
+# Implement TRIEMATCHING to solve the Multiple Pattern Matching Problem.
+#    Input: A string Text and a collection of strings Patterns.
+#    Output: All starting positions in Text where a string from Patterns appears as a substring.
+def trie_matching(text, trie):
+
+    text_len = len(text)
+    sz = text_len
+    idx = 0
+    
+    matching = {}
+    
+    while idx < text_len:
+    
+        pred , pat = prefix_trie_matching(text[idx:], trie, sz)     
+        if pred:
+            if pat in matching.keys():
+                matching[pat].append(idx)
+            else:
+                matching[pat] = [idx]
+         
+        idx += 1
+        sz  -= 1   
+      
+    return matching         
+
+def multiple_pattern_matching(text, patterns):
+
+    trie, _  = trie_construction(patterns)
+    matching = trie_matching(text, trie) 
+    
+    ret = ""
+    for i in range(len(patterns)):
+        pat = patterns[i]
+    
+        if pat in matching.keys():
+            ret += " ".join(map(str,matching[pat])) + "\n"     
+    
     return ret
+              
+
+
